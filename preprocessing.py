@@ -33,7 +33,7 @@ def tf_train_test_split(dataset, split_ratio:list = [0.7,0.15,0.15], seed = 1, b
 
     return train_set,val_set, test_set
 
-def generate_classified_dataset(root_path, to_size = (200,200), mode = "np" image_data_generator = None):
+def generate_classified_dataset(root_path, to_size = (200,200), mode = "np", image_data_generator = None):
     """
     a wrapper to read classified images from a root path
     args:
