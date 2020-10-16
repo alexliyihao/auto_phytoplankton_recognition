@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import os
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
 from tqdm.notebook import tqdm
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -14,6 +14,9 @@ def generate_classified_dataset(root_path, to_size = (200,200), image_data_gener
         root_path: string, the root path of the folders
         to_size: tuple of int, the final size of image
         image_data_generator: tf.keras.preprocessing.image.ImageDataGenerator
+    return:
+        dataset: tf.data.Dataset object, the classified image with the integer code
+        labelencoder: sklearn.preprocessing.LabelEncoder object, for the .inverse_transform method
     """
     if image_data_generator == None:
         image_data_generator = ImageDataGenerator(rotation_range=360,
@@ -26,9 +29,9 @@ def generate_classified_dataset(root_path, to_size = (200,200), image_data_gener
                                      horizontal_flip=True,
                                      vertical_flip=True,
                                      )
-    X,y,labels = generate_dataset(*read_classified_image(root_path = root_path, to_size = to_size),
+    X,y,LE = generate_dataset(*read_classified_image(root_path = root_path, to_size = to_size),
                                  image_data_generator)
-    return tf.data.Dataset.from_tensor_slices((X,y)), labels
+    return tf.data.Dataset.from_tensor_slices((X,y)), LE
 
 def preprocess(img, to_size = (200,200)):
     """
@@ -94,9 +97,9 @@ def generate_dataset(image_list, label_list, image_data_generator):
         y+=[label]*majority_size
 
     y = pd.DataFrame(y)
-    OHE = OneHotEncoder()
-    y = OHE.fit_transform(y).todense()
-    return X,y, OHE.categories_
+    LE = LabelEncoder()
+    y = LE.fit_transform(y)
+    return X,y, LE
 
 
 def extract_image(image):
