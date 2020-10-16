@@ -26,27 +26,6 @@ def tf_train_test_split(dataset, split_ratio:list = [0.7,0.15,0.15], seed = 1, b
     train_set = train_set.skip(val_size)
 
     print(f"Full dataset size {DATASET_SIZE}, splited into training {len(train_set)}, validatation {val_size}, testing {test_size}")
-    return train_set,val_set, test_set
-
-def tf_train_test_split(dataset, split_ratio:list = [0.7,0.15,0.15], seed = 1, batch_size = 32):
-    """
-    work as sklearn's train test split
-    """
-    test_size = [i/sum(split_ratio) for i in split_ratio]
-    DATASET_SIZE = len(dataset)
-    val_size = int(split_ratio[1] * DATASET_SIZE)
-    test_size = int(split_ratio[2] * DATASET_SIZE)
-
-    full_dataset = dataset.shuffle(buffer_size=64,
-                                   seed = seed,
-                                   reshuffle_each_iteration=True)
-
-    test_set = full_dataset.take(test_size)
-    train_set = full_dataset.skip(test_size)
-    val_set = train_set.take(val_size)
-    train_set = train_set.skip(val_size)
-
-    print(f"Full dataset size {DATASET_SIZE}, splited into training {len(train_set)}, validatation {val_size}, testing {test_size}")
 
     train_set = train_set.batch(64)
     val_set = val_set.batch(64)

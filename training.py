@@ -5,36 +5,33 @@ from tensorflow.keras.layers import Flatten, Dense, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, TensorBoard
 
-def generate_callbacks(tensorboard = False):
+def generate_callbacks(model_path, tensorboard = False):
     # Callback : Learning Rate annealer
     reduceLR = ReduceLROnPlateau(monitor = 'val_loss',
                                  patience = 15,
                                  factor = 0.5,
-                                 min_lr = 0,
+                                 min_lr = 1e-6,
                                  verbose = 1)
     # Callback : Save best model
-    chkPoint = ModelCheckpoint("model.hdf5",
-                              monitor = 'val_loss',
-                              save_best_only = True,
-                              save_weights_only = False,
-                              mode = 'auto',
-                              stop_freq = 1,
-                              verbose = 0)
-    # Callback : Early Stop
-    earlyStop = EarlyStopping(monitor='val_loss',
-                              mode = 'auto',
-                              patience = 400,
-                              min_delta = 0.01,
-                              verbose = 1)
+    if model_path[-5:] != ".hdf5"
+        model_path += ".hdf5"
+    chkPoint = ModelCheckpoint(model_path,
+                               monitor = 'val_loss',
+                               save_best_only = True,
+                               save_weights_only = False,
+                               mode = 'epoch',
+                               save_freq= 1,
+                               verbose = 0)
+
     if tensorboard == False:
-        return [reduceLR,  chkPoint, earlyStop]
+        return [reduceLR,  chkPoint]
     else:
         TensorBoard_callback = TensorBoard(log_dir="./logs")
-        return [reduceLR,  chkPoint, earlyStop, TensorBoard_callback]
+        return [reduceLR,  chkPoint, TensorBoard_callback]
 
 def create_model(image_size,
                  encoder,
-                 model = tf.keras.applications.EfficientNetB2,
+                 model,
                  optimizer = tf.keras.optimizers.Adam(lr = 0.05),
                  metrics = [tf.keras.metrics.SparseCategoricalAccuracy()]):
     """
@@ -49,7 +46,7 @@ def create_model(image_size,
       a compiled tensorflow.python.keras.engine.functional.Functional model
     """
     efn = model(weights='imagenet', include_top = False)
-    input = Input(shape= image_size)
+    input = Input(shape= (*image_size,3))
     x = efn(input)
     x = Flatten()(x)
     x = Dense(64, activation='relu')(x)
