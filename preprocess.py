@@ -2,8 +2,12 @@ import PIL
 import PIL.image as Img
 import numpy as np
 import tensorflow as tf
+import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
+from tqdm.notebook import tqdm
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-def generate_classified_dataset(root_path, to_size = (200,200), image_data_generator):
+def generate_classified_dataset(root_path, to_size = (200,200), image_data_generator = None):
     """
     a wrapper to read classified images from a root path
     args:
@@ -11,8 +15,20 @@ def generate_classified_dataset(root_path, to_size = (200,200), image_data_gener
         to_size: tuple of int, the final size of image
         image_data_generator: tf.keras.preprocessing.image.ImageDataGenerator
     """
-
-    return tf.data.Dataset.from_tensor_slices(generate_dataset(*read_classified_image(root_path = root_path, to_size = to_size),image_data_generator))
+    if image_data_generator == None:
+        image_data_generator = ImageDataGenerator(rotation_range=360,
+                                     width_shift_range=0.1,
+                                     height_shift_range=0.1,
+                                     brightness_range=None,
+                                     shear_range=0.1,
+                                     zoom_range=0.1,
+                                     fill_mode="nearest",
+                                     horizontal_flip=True,
+                                     vertical_flip=True,
+                                     )
+    X,y,labels = generate_dataset(*read_classified_image(root_path = root_path, to_size = to_size),
+                                 image_data_generator)
+    return tf.data.Dataset.from_tensor_slices((X,y)), labels
 
 def extract_from_tif(tif):
     """
@@ -72,12 +88,12 @@ def read_classified_image(root_path, to_size = (200,200)):
     """
     label_list = []
     image_list = []
-    for label in os.listdir(root_path):
+    for label in tqdm(os.listdir(root_path), desc = "Read in...", leave = False):
       sub_path = os.path.join(path, label)
       if len(os.listdir(sub_path)) == 0:
         continue
       sub_image_list = []
-      for j in os.listdir(sub_path):
+      for j in tqdm(os.listdir(sub_path), desc = f"label {label]}", leave = False):
         image = Image.open(os.path.join(sub_path, j))
         image = preprocess(image, to_size = to_size)
         sub_image_list.append(image)
@@ -93,12 +109,16 @@ def generate_dataset(image_list, label_list, image_data_generator):
     majority_size = np.max(np.fromiter((len(sub_list) for sub_list in image_list), dtype = int))
     X = []
     y = []
-    for img_list,label in zip(image_list, label_list):
+    for img_list,label in tqdm(zip(image_list, label_list), desc = "balancing the dataset...", leave = False):
         X+=img_list
         for ctr in range(majority_size - len(img_list)):
             X.append(datagen.random_transform(sub_list[np.random.randint(0,len(img_list))]))
         y+=[label]*majority_size
-    return X,y
+
+    y = pd.DataFrame(y)
+    OHE = OneHotEncoder()
+    y = OHE.fit_transform(y).todense()
+    return X,y, OHE.categories_
 
 
 def extract_image(image):

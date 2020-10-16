@@ -15,7 +15,6 @@ def find_valid_tif(root_path):
     return [i for i in glob.iglob(os.path.join(root_path, "/**/*.tif"), recursive = True) if "bin" not in i and "cal_image" not in i]
 
 
-
 def model_predict(obj, models, mode = "average"):
     """
     pass object to classification model/model group and generate the result
