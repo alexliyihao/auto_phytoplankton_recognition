@@ -60,7 +60,7 @@ def generate_classified_dataset(root_path, to_size = (200,200), mode = "np", ima
                                  image_data_generator)
     if mode == "np":
         return X,y,LE
-    if mode == "tf"
+    if mode == "tf":
         return tf.data.Dataset.from_tensor_slices((X,y)), LE
 
 def preprocess(img, to_size = (200,200)):
