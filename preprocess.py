@@ -1,6 +1,18 @@
 import PIL
 import PIL.image as Img
 import numpy as np
+import tensorflow as tf
+
+def generate_classified_dataset(root_path, to_size = (200,200), image_data_generator):
+    """
+    a wrapper to read classified images from a root path
+    args:
+        root_path: string, the root path of the folders
+        to_size: tuple of int, the final size of image
+        image_data_generator: tf.keras.preprocessing.image.ImageDataGenerator
+    """
+
+    return tf.data.Dataset.from_tensor_slices(generate_dataset(*read_classified_image(root_path = root_path, to_size = to_size),image_data_generator))
 
 def extract_from_tif(tif):
     """
@@ -21,10 +33,9 @@ def extract_from_tif(tif):
     #otherwise it is a np.ndarray
     #extract the np.ndarray
     extracted = extract_image(tif)
-
     return extracted
 
-def preprocess(image, to_size):
+def preprocess(image, to_size = (200,200)):
     """
     the function operating preprocessing to individual image
     1. control the size to size of to_size while keep the same aspect ratio
@@ -47,6 +58,47 @@ def preprocess(image, to_size):
     diff_y = np.ceil((to_size[1] - img.shape[1])/2).astype(int)
     padded = np.pad(img/255.0 , pad_width= ((diff_x,diff_x),(diff_y,diff_y),(0,0)))
     return padded[0:to_size[0], 0:to_size[1]]
+
+def read_classified_image(root_path, to_size = (200,200)):
+    """
+    before tfds.folder_dataset.ImageFolder is correctly imported I'll still use mine
+
+    arg:
+        root_path: the root_path of classified image folder
+        to_size: the actual size of all the output
+    return:
+        image_list: 2D list of np.ndarray
+        label_list: 1D list of string, the labels with 1-1 corrspodense to image_list
+    """
+    label_list = []
+    image_list = []
+    for label in os.listdir(root_path):
+      sub_path = os.path.join(path, label)
+      if len(os.listdir(sub_path)) == 0:
+        continue
+      sub_image_list = []
+      for j in os.listdir(sub_path):
+        image = Image.open(os.path.join(sub_path, j))
+        image = preprocess(image, to_size = to_size)
+        sub_image_list.append(image)
+      label_list.append(label)
+      image_list.append(sub_image_list)
+      return image_list, label_list
+
+def generate_dataset(image_list, label_list, image_data_generator):
+    """
+    for the image in image_list, if there's any imbalanced dataset,
+    use image_data_generator to re-balance it
+    """
+    majority_size = np.max(np.fromiter((len(sub_list) for sub_list in image_list), dtype = int))
+    X = []
+    y = []
+    for img_list,label in zip(image_list, label_list):
+        X+=img_list
+        for ctr in range(majority_size - len(img_list)):
+            X.append(datagen.random_transform(sub_list[np.random.randint(0,len(img_list))]))
+        y+=[label]*majority_size
+    return X,y
 
 
 def extract_image(image):
