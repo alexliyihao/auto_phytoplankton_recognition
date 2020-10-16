@@ -4,10 +4,11 @@ from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import Flatten, Dense, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, TensorBoard
+from tqdm.keras import TqdmCallback
 
 def generate_callbacks(model_path, tensorboard = False):
     # Callback : Learning Rate annealer
-    reduceLR = ReduceLROnPlateau(monitor = 'val_loss',
+    reduceLR = ReduceLROnPlateau(monitor = 'val_sparse_categorical_accuracy',
                                  patience = 15,
                                  factor = 0.5,
                                  min_lr = 1e-6,
@@ -16,18 +17,17 @@ def generate_callbacks(model_path, tensorboard = False):
     if model_path[-5:] != ".hdf5":
         model_path += ".hdf5"
     chkPoint = ModelCheckpoint(model_path,
-                               monitor = 'val_loss',
+                               monitor = 'val_sparse_categorical_accuracy',
                                save_best_only = True,
                                save_weights_only = False,
-                               mode = 'epoch',
                                save_freq= 1,
                                verbose = 0)
 
     if tensorboard == False:
-        return [reduceLR,  chkPoint]
+        return [reduceLR,  chkPoint, TqdmCallback(verbose=1)]
     else:
         TensorBoard_callback = TensorBoard(log_dir="./logs")
-        return [reduceLR,  chkPoint, TensorBoard_callback]
+        return [reduceLR,  chkPoint, TensorBoard_callback, TqdmCallback(verbose=1)]
 
 def create_model(image_size,
                  encoder,
