@@ -13,7 +13,7 @@ def generate_callbacks(model_path, tensorboard = False):
                                  min_lr = 1e-6,
                                  verbose = 1)
     # Callback : Save best model
-    if model_path[-5:] != ".hdf5"
+    if model_path[-5:] != ".hdf5":
         model_path += ".hdf5"
     chkPoint = ModelCheckpoint(model_path,
                                monitor = 'val_loss',
