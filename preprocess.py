@@ -1,7 +1,7 @@
-import PIL
 from PIL import Image as Img
 import numpy as np
 import tensorflow as tf
+import os
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from tqdm.notebook import tqdm
@@ -30,35 +30,14 @@ def generate_classified_dataset(root_path, to_size = (200,200), image_data_gener
                                  image_data_generator)
     return tf.data.Dataset.from_tensor_slices((X,y)), labels
 
-def extract_from_tif(tif):
-    """
-    extract the image from a existed tif, which can be a PIL object, np.ndarray or a path
-
-    arg:
-      tif: str, np.ndarray, or PIL.TiffImagePlugin.TiffImageFile, the tif file
-    return:
-      extracted: list of np.ndarray, the extracted
-    """
-
-    assert type(tif) in [str, np.ndarray, PIL.TiffImagePlugin.TiffImageFile]
-    # if given a path, the input should be opened as a PIL
-    if type(tif) == str:
-      tif = np.array(Img.open(tif))
-    elif type(tif) == PIL.TiffImagePlugin.TiffImageFile:
-      tif = np.array(tif)
-    #otherwise it is a np.ndarray
-    #extract the np.ndarray
-    extracted = extract_image(tif)
-    return extracted
-
-def preprocess(image, to_size = (200,200)):
+def preprocess(img, to_size = (200,200)):
     """
     the function operating preprocessing to individual image
     1. control the size to size of to_size while keep the same aspect ratio
     2. if the image is smaller than to_size, add a black padding
     3. convert it from [0,255] int to [0,1] float format
 
-    image: np.array/PIL.Image.Image, individual image
+    img: np.array/PIL.Image.Image, individual image
     to_size: tuple
 
     return :
@@ -89,17 +68,17 @@ def read_classified_image(root_path, to_size = (200,200)):
     label_list = []
     image_list = []
     for label in tqdm(os.listdir(root_path), desc = "Read in...", leave = False):
-      sub_path = os.path.join(path, label)
+      sub_path = os.path.join(root_path, label)
       if len(os.listdir(sub_path)) == 0:
         continue
       sub_image_list = []
       for j in tqdm(os.listdir(sub_path), desc = f"label {label}", leave = False):
-        image = Image.open(os.path.join(sub_path, j))
+        image = Img.open(os.path.join(sub_path, j))
         image = preprocess(image, to_size = to_size)
         sub_image_list.append(image)
       label_list.append(label)
       image_list.append(sub_image_list)
-      return image_list, label_list
+    return image_list, label_list
 
 def generate_dataset(image_list, label_list, image_data_generator):
     """
@@ -111,8 +90,7 @@ def generate_dataset(image_list, label_list, image_data_generator):
     y = []
     for img_list,label in tqdm(zip(image_list, label_list), desc = "balancing the dataset...", leave = False):
         X+=img_list
-        for ctr in range(majority_size - len(img_list)):
-            X.append(datagen.random_transform(sub_list[np.random.randint(0,len(img_list))]))
+        X+=[(image_data_generator.random_transform(img_list[np.random.randint(0,len(img_list))])) for ctr in range(majority_size - len(img_list))]
         y+=[label]*majority_size
 
     y = pd.DataFrame(y)
