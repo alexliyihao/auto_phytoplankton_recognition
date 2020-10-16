@@ -1,5 +1,5 @@
 import PIL
-import PIL.image as Img
+from PIL import Image as Img
 import numpy as np
 import tensorflow as tf
 import pandas as pd
@@ -93,7 +93,7 @@ def read_classified_image(root_path, to_size = (200,200)):
       if len(os.listdir(sub_path)) == 0:
         continue
       sub_image_list = []
-      for j in tqdm(os.listdir(sub_path), desc = f"label {label]}", leave = False):
+      for j in tqdm(os.listdir(sub_path), desc = f"label {label}", leave = False):
         image = Image.open(os.path.join(sub_path, j))
         image = preprocess(image, to_size = to_size)
         sub_image_list.append(image)
