@@ -7,6 +7,53 @@ from sklearn.preprocessing import LabelEncoder
 from tqdm.notebook import tqdm
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+def tf_train_test_split(dataset, split_ratio:list = [0.7,0.15,0.15], seed = 1, batch_size = 32):
+    """
+    work as sklearn's train test split
+    """
+    test_size = [i/sum(split_ratio) for i in split_ratio]
+    DATASET_SIZE = len(dataset)
+    val_size = int(split_ratio[1] * DATASET_SIZE)
+    test_size = int(split_ratio[2] * DATASET_SIZE)
+
+    full_dataset = dataset.shuffle(buffer_size=64,
+                                   seed = seed,
+                                   reshuffle_each_iteration=True)
+
+    test_set = full_dataset.take(test_size)
+    train_set = full_dataset.skip(test_size)
+    val_set = train_set.take(val_size)
+    train_set = train_set.skip(val_size)
+
+    print(f"Full dataset size {DATASET_SIZE}, splited into training {len(train_set)}, validatation {val_size}, testing {test_size}")
+    return train_set,val_set, test_set
+
+def tf_train_test_split(dataset, split_ratio:list = [0.7,0.15,0.15], seed = 1, batch_size = 32):
+    """
+    work as sklearn's train test split
+    """
+    test_size = [i/sum(split_ratio) for i in split_ratio]
+    DATASET_SIZE = len(dataset)
+    val_size = int(split_ratio[1] * DATASET_SIZE)
+    test_size = int(split_ratio[2] * DATASET_SIZE)
+
+    full_dataset = dataset.shuffle(buffer_size=64,
+                                   seed = seed,
+                                   reshuffle_each_iteration=True)
+
+    test_set = full_dataset.take(test_size)
+    train_set = full_dataset.skip(test_size)
+    val_set = train_set.take(val_size)
+    train_set = train_set.skip(val_size)
+
+    print(f"Full dataset size {DATASET_SIZE}, splited into training {len(train_set)}, validatation {val_size}, testing {test_size}")
+
+    train_set = train_set.batch(64)
+    val_set = val_set.batch(64)
+    test_set = test_set.batch(64)
+
+    return train_set,val_set, test_set
+
 def generate_classified_dataset(root_path, to_size = (200,200), image_data_generator = None):
     """
     a wrapper to read classified images from a root path
@@ -70,7 +117,7 @@ def read_classified_image(root_path, to_size = (200,200)):
     """
     label_list = []
     image_list = []
-    for label in tqdm(os.listdir(root_path), desc = "Read in...", leave = False):
+    for label in tqdm(sorted(os.listdir(root_path)), desc = "Read in...", leave = False):
       sub_path = os.path.join(root_path, label)
       if len(os.listdir(sub_path)) == 0:
         continue
@@ -96,7 +143,6 @@ def generate_dataset(image_list, label_list, image_data_generator):
         X+=[(image_data_generator.random_transform(img_list[np.random.randint(0,len(img_list))])) for ctr in range(majority_size - len(img_list))]
         y+=[label]*majority_size
 
-    y = pd.DataFrame(y)
     LE = LabelEncoder()
     y = LE.fit_transform(y)
     return X,y, LE
