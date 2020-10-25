@@ -27,7 +27,7 @@ def generate_callbacks(model_path, tensorboard = False):
         return [reduceLR,  chkPoint, TqdmCallback(verbose=1)]
     else:
         TensorBoard_callback = TensorBoard(log_dir="./logs")
-        return [reduceLR,  chkPoint, TensorBoard_callback, TqdmCallback(verbose=1)]
+        return [reduceLR,  chkPoint, TensorBoard_callback, TqdmCallback(verbose=2)]
 
 def create_model(image_size,
                  encoder,
