@@ -71,7 +71,7 @@ def traverse_save(tree, save_path, path_list, name = "root", smallest_size = 5, 
         if isinstance(_left_try, hierarchy.ClusterNode):
             # if the number of images under this cluster is smaller than 5, skip(too small)
             if len(_left_try.pre_order()) >=5 :
-                if print == True:
+                if print_mode == True:
                     print(f"making {os.path.join(_current_path, 'left')} for {len(_left_try.pre_order())} images")
                 traverse_save(tree = _left_try,
                               save_path = _current_path,
@@ -84,7 +84,7 @@ def traverse_save(tree, save_path, path_list, name = "root", smallest_size = 5, 
         if isinstance(_right_try, hierarchy.ClusterNode):
             # if the number of images under this cluster is smaller than 5, skip(too small)
             if len(_right_try.pre_order())>=5:
-                if print == True:
+                if print_mode == True:
                     print(f"making {os.path.join(_current_path, 'right')} for {len(_right_try.pre_order())} images")
                 traverse_save(tree = _right_try,
                               save_path = _current_path,
@@ -109,7 +109,7 @@ def cluster_process(data,
     """
     assert hierarchy__method in ["single", "complete", "average", "weighted", "ward", "centroid", "median"]
     _pca = PCA(n_components = PCA__n_component)
-    _data = pca.fit_transform(data)
+    _data = _pca.fit_transform(data)
     _linkage = clustering(data = _data, method = hierarchy__method)
     _tree = hierarchy.to_tree(_linkage)
     traverse_save(tree = _tree,

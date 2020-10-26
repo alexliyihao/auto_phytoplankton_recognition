@@ -2,7 +2,10 @@ import torch
 from torchvision import transforms
 import numpy as np
 import PIL.Image as Img
+import os
 import gc
+import glob
+from tqdm.notebook import tqdm
 
 def load_model(path = "/content/drive/My Drive/LDEO/encoder_weight.pth"):
     """
@@ -25,8 +28,8 @@ class encoder(torch.nn.Module):
         self.conv2 = torch.nn.Conv2d(8, 16, kernel_size = 3)
         self.conv3 = torch.nn.Conv2d(16, 32, kernel_size = 3)
         self.conv4 = torch.nn.Conv2d(32, 64, kernel_size = 3)
-        self.mp = nn.MaxPool2d(2)
-        self.relu = nn.ReLU()
+        self.mp = torch.nn.MaxPool2d(2)
+        self.relu = torch.nn.ReLU()
     def forward(self,x):
         out = self.relu(self.mp(self.conv1(x)))
         out = self.relu(self.mp(self.conv2(out)))
