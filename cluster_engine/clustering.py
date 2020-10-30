@@ -4,6 +4,7 @@ import numpy as np
 import fastcluster
 from scipy.cluster import hierarchy
 import shutil
+import os
 from typing import List, Dict, Tuple
 
 def PCA_preview(data, top_feature:int = None):
