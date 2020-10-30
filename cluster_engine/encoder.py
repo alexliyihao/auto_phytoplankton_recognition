@@ -38,6 +38,33 @@ class encoder(torch.nn.Module):
         return out
 
 @torch.no_grad()
+def load_images_and_encode_one_folder(encoder,
+                                      preprocessing = transforms.ToTensor(),
+                                      path = "",
+                                      device = "cpu"):
+    """
+    load all the images under specified path,
+    during loading, all the images will be resized to 64*64, switch to tensor,
+    then only the encoded form will be returned considering the memory issue
+
+    arg:
+        encoder: torch.nn.module instance, the encoder of the images trained
+        preprocessing: torchvision.transforms instance
+        path: str, the path to a specific folder
+    """
+    # if possible, run it on cuda
+    encoder = encoder.to(device)
+    # get all the pngs under this folder
+    _paths = glob.glob(os.path.join(path, "*.png"))
+    # read in the images, preprocessing it
+    _img_list = torch.stack([preprocessing(Img.open(img).resize((64,64))) for img in _paths])
+    # for efficiency consideration, only save the encoded images and their path
+    _encoded = encoder(_img_list.double().to(device))
+    # return as normal np.ndarray
+    _np_encoded = _encoded.view(_encoded.shape[0],-1).detach().cpu().numpy()
+    return _paths, _np_encoded
+
+@torch.no_grad()
 def load_encoded_images(encoder,
                         preprocessing = transforms.ToTensor(),
                         path_list = [],
@@ -101,4 +128,22 @@ def load_process(image_path_list,
                                                          path_list = image_path_list,
                                                          device = _device)
     print(f"{len(_image_path)} images loaded")
+    return _image_path, _encoded_img_list
+
+def load_from_single_folder(path,
+                            encoder_path = "/content/drive/My Drive/LDEO/encoder_weight.pth",
+                            preprocessing = transforms.ToTensor()):
+    """
+    wrapper for the whole loading process
+    Args:
+    path:str, path of a folder filled with .png individual vignettes
+    encoder_path: str: the path of the encoder
+    preprocessing: torchvision.transforms instance, the preprocessing to be applied
+    """
+    _device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    _encoder = load_model(path = encoder_path)
+    _image_path, _encoded_img_list = load_images_and_encode_one_folder(encoder = _encoder,
+                                                          path = path,
+                                                          device = _device,
+                                                          preprocessing = preprocessing)
     return _image_path, _encoded_img_list
