@@ -1,11 +1,11 @@
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
 import numpy as np
-import fastcluster
+import pandas as pd
+import matplotlib.pyplot as plt
 from scipy.cluster import hierarchy
 import shutil
 import os
-from typing import List, Dict, Tuple
+
 
 def PCA_preview(data, top_feature:int = None):
     """
@@ -22,28 +22,6 @@ def PCA_preview(data, top_feature:int = None):
     extracted = pca.fit_transform(data)
     plt.plot(np.arange(1,n_components+1),pca.explained_variance_ratio_.cumsum()[:n_components]);
     plt.title(f"Explained information from top {n_components+1} features");
-    plt.show()
-
-def clustering(data, method = "ward"):
-    """
-    wrapper for fastcluster clustering
-    Arg:
-        data: (N*D) np.ndarray, the data
-        method: the cluster method to be used
-    return:
-        np.ndarray in scipy linkage format
-    """
-    assert method in ["single", "complete", "average", "weighted", "ward", "centroid", "median"]
-    return fastcluster.linkage(data, method=method, metric='euclidean', preserve_input=True)
-
-def visualize_clustering(linkage):
-    """
-    wrapper for dendrogram visualization, this function is very slow
-    args:
-        linkage: (N*4) np.ndarray, the result of fastcluster.linkage or scipy hierarchy result
-    """
-    plt.figure()
-    df = hierarchy.dendrogram(linkage)
     plt.show()
 
 def traverse_save(tree, save_path, path_list, name = "root", smallest_size = 5, print_mode = True):
