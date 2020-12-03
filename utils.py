@@ -68,11 +68,10 @@ def extract_from_tif(tif):
       extracted: list of np.ndarray, the extracted
     """
 
-    assert type(tif) in [str, np.ndarray, PIL.TiffImagePlugin.TiffImageFile]
     # if given a path, the input should be opened as a PIL
     if type(tif) == str:
       tif = np.array(Img.open(tif))
-    elif type(tif) == PIL.TiffImagePlugin.TiffImageFile:
+    elif isinstance(tif, np.ndarray) == False:
       tif = np.array(tif)
     #otherwise it is a np.ndarray
     #extract the np.ndarray
