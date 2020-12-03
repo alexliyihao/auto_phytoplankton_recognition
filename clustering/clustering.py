@@ -1,5 +1,6 @@
 import fastcluster
 from scipy.cluster import hierarchy
+import matplotlib.pyplot as plt
 
 def cluster(data, method = "ward"):
     """
