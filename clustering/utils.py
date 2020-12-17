@@ -192,3 +192,82 @@ def save_leaves(tree, image_list, save_path, path_df, name = "root", cluster_siz
                                             )
     except AttributeError:
       pass
+
+def leaf_saving(tree, image_list, save_path, path_df, cluster_size = 5):
+    """
+    Saving bottom(leaf) clusters from the bottom of the aggomerative tree
+    This save will be in DFS searching of the hierarchy tree
+    different from the traverse_save, only the leaf path will be saved
+    Tree: scipy.cluster.hierarchy.ClusterNode, the root node of the heriachy
+          tree from scipy.cluster.hierarchy.to_tree function
+    image_list: list np.ndarray, the list of image
+    path_df: pandas.DataFrame object, the df[["Image File", "Particle ID"]] object, for the path
+    save_path: str, the root path to be saved
+    cluster_size: int, the largest cluster size that will be saved as an individual folder
+    """
+    global folder_count
+    folder_count = 0
+    def save_leaves(tree, image_list, save_path, path_df, cluster_size = 5):
+        global folder_count
+        # set node as the current node
+        _current_node = tree
+        #copy all the images in this cluster
+        try:
+            _left_try = _current_node.get_left()
+            # if it is an end point, skip
+            if isinstance(_left_try, hierarchy.ClusterNode):
+                # if the number of images under this cluster is smaller than 5, skip(too small)
+                if len(_left_try.pre_order()) >=cluster_size :
+                    save_leaves(tree = _left_try,
+                                image_list = image_list,
+                                save_path = save_path,
+                                path_df = path_df,
+                                cluster_size = cluster_size,
+                                )
+                else:
+                    new_folder_path = os.path.join(save_path, str(folder_count))
+                    os.makedirs(new_folder_path, exist_ok=False)
+                    for i in _left_try.pre_order():
+                        plt.imsave(
+                            fname = os.path.join(
+                                new_folder_path,
+                                f"{path_df['Image File'].iloc[i]}_{path_df['Particle ID'].iloc[i]}.png"
+                                ),
+                            arr = image_list[i]
+                            )
+                    folder_count += 1
+        except AttributeError:
+          pass
+
+        try:
+            _right_try = _current_node.get_right()
+            # if it is a leaf, skip
+            if isinstance(_right_try, hierarchy.ClusterNode):
+                # if the number of images under this cluster is smaller than 5, skip(too small)
+                if len(_right_try.pre_order())>=cluster_size:
+                    save_leaves(tree = _right_try,
+                                image_list = image_list,
+                                save_path = save_path,
+                                path_df = path_df,
+                                cluster_size = cluster_size,
+                                )
+                else:
+                    new_folder_path = os.path.join(save_path, str(folder_count))
+                    os.makedirs(new_folder_path, exist_ok=False)
+                    for i in _right_try.pre_order():
+                        plt.imsave(
+                            fname = os.path.join(
+                                new_folder_path,
+                                f"{path_df['Image File'].iloc[i]}_{path_df['Particle ID'].iloc[i]}.png"
+                                ),
+                            arr = image_list[i]
+                            )
+                    folder_count += 1
+        except AttributeError:
+          pass
+    save_leaves(tree = tree,
+                image_list = image_list,
+                save_path = save_path,
+                path_df = path_df,
+                cluster_size = cluster_size)
+    print(f"{folder_count} folder(s) has been created")
