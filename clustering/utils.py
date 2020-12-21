@@ -271,3 +271,18 @@ def leaf_saving(tree, image_list, save_path, path_df, cluster_size = 5):
                 path_df = path_df,
                 cluster_size = cluster_size)
     print(f"{folder_count} folder(s) has been created")
+
+def save_cut_tree(cutted_tree, name, image_list, base = "/content/drive/MyDrive/Machine Learning/"):
+    """
+    save a cutted tree
+    args:
+      cutted_tree: (N,1) np.ndarray, the belonging of each array
+      base: str, the root folder to be saved
+      image_list: list, the images who has 1-1 corresponding to cutted tree
+      name: str: name of the folder to be saved in
+    """
+    os.makedirs(base + name)
+    for i in range(np.max(cutted_tree)+1):
+      os.makedirs(os.path.join(base+name, str(i)))
+    for number,image,label in tqdm(zip(range(len(image_list)), image_list,cutted_tree.ravel())):
+        plt.imsave(os.path.join(base+name, str(label), f"{origin['Image File'].iloc[number]}_{origin['Particle ID'].iloc[number]}.png"), arr = image)
