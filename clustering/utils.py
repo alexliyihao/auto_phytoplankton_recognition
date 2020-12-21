@@ -275,6 +275,7 @@ def leaf_saving(tree, image_list, save_path, path_df, cluster_size = 5):
 def save_cut_tree(cutted_tree, name, image_list, base = "/content/drive/MyDrive/Machine Learning/"):
     """
     save a cutted tree
+    
     args:
       cutted_tree: (N,1) np.ndarray, the belonging of each array
       base: str, the root folder to be saved
@@ -290,6 +291,7 @@ def save_cut_tree(cutted_tree, name, image_list, base = "/content/drive/MyDrive/
 def save_cut_tree_by_station(cutted_tree, name, image_list, base = "/content/drive/MyDrive/Machine Learning/"):
     """
     save a cutted tree, saved by the station
+
     args:
       cutted_tree: (N,1) np.ndarray, the belonging of each array
       base: str, the root folder to be saved
