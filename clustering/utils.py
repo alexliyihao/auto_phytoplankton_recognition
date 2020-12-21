@@ -286,3 +286,17 @@ def save_cut_tree(cutted_tree, name, image_list, base = "/content/drive/MyDrive/
       os.makedirs(os.path.join(base+name, str(i)))
     for number,image,label in tqdm(zip(range(len(image_list)), image_list,cutted_tree.ravel())):
         plt.imsave(os.path.join(base+name, str(label), f"{origin['Image File'].iloc[number]}_{origin['Particle ID'].iloc[number]}.png"), arr = image)
+
+def save_cut_tree_by_station(cutted_tree, name, image_list, base = "/content/drive/MyDrive/Machine Learning/"):
+    """
+    save a cutted tree, saved by the station
+    args:
+      cutted_tree: (N,1) np.ndarray, the belonging of each array
+      base: str, the root folder to be saved
+      image_list: list, the images who has 1-1 corresponding to cutted tree
+      name: str: name of the folder to be saved in
+    """
+    os.makedirs(base + name)
+    for number,image,label in tqdm(zip(range(len(image_list)), image_list,cutted_tree.ravel())):
+        os.makedirs(os.path.join(base+name, origin['Image File'].iloc[number].split("_")[0], str(label)), exist_ok=True)
+        plt.imsave(os.path.join(base+name, origin['Image File'].iloc[number].split("_")[0], str(label), f"{origin['Image File'].iloc[number]}_{origin['Particle ID'].iloc[number]}.png"), arr = image)
