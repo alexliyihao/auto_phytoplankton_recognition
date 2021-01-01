@@ -1,7 +1,10 @@
 import glob2
 import os
 import numpy as np
+import pandas as pd
 import re
+import cv2
+import PIL.Image as Img
 
 class flowcam_loader():
     """
@@ -10,17 +13,19 @@ class flowcam_loader():
     def __init__(self, path = None):
         """
         init of this loader, please be noticed that the initialization of this
-        loader will not load any data into memory.
+        loader will not load any data into memory for efficiency consideration
 
         Args:
           folder_path: str, the path of the folder
         """
         self._folder_path = path
-        self._feature_data =
+        self._feature_data = None
         self._tif_paths = self._tif_management(path = path)
-        self._csv_paths = self._csv_management(path = path)
+        self._csv_path = self._csv_management(path = path)
+        self._images = []
+        self._features = None
 
-    def extract_index(self, path):
+    def _extract_index(self, path):
         """
         given a path_string, extract the batch number in int
         Args:
@@ -41,28 +46,30 @@ class flowcam_loader():
                         and the original image
         """
         _tif_paths = [i for i in glob2.iglob(os.path.join(path, "*.tif")) if "cal_image" not in i]
-        _tifs = {self.extract_index(i):{"original":i} for i in _tif_paths if "_bin.tif" not in i}
+        _tifs = {self._extract_index(i):{"original":i} for i in _tif_paths if "_bin.tif" not in i}
         _binary_mask = [i for i in _tif_paths if "_bin.tif" in i]
         for i in _binary_mask:
-            _tifs[self.extract_index(i)]["binary"]=i
+            _tifs[self._extract_index(i)]["binary"]=i
         return list(_tifs.values())
 
     def _csv_management(self, path):
         """
         given a folder path, get the path of the CSV file recording features
+        Args:
+            path: str, the path string
+        Returns:
+            str, the data_export.csv's path in the folder
         """
         return [i for i in glob2.iglob(os.path.join(path, "data_export.csv"))][0]
 
-    def length(self):
+    def _extract_images(self, image):
         """
-        return the current length inside the folder
-        """
-        return len(self._images)
-
-    def extract_images(image):
-        """
-        extract all the images into the loader, improved from the original one,
-        it will use the binary mask to create a white input image.
+        extract all the images into the loader
+        the image will be extracted from the normal reading order
+        Args:
+            image: np.ndarray, the tif collage
+        Returns:
+            _extracted_list: list[np.ndarray], the list of images extracted from the list
         """
         _shape_height = image.shape[0]#the height of the image
         _shape_width = image.shape[1]#the width of the image
@@ -100,12 +107,40 @@ class flowcam_loader():
                 #append the image to the final list
                 _extracted_list.append(
                         image[_starting_y:_starting_y+_image_end_y,
-                              _image_starting_x:_column_end_x[_x_index]]    
+                              _image_starting_x:_column_end_x[_x_index]]
                         )
             return _extracted_list
 
     def load_features(self):
         """
-        load the csv files of the folder into the
+        load the csv files of the folder into the loader
         """
-        pass
+        self._features = pd.read_csv(self._csv_path)
+
+    def load_images(self):
+        """
+        load the images into the loader,
+        all the images are ordered by the official order
+        """
+        for i in self._tif_paths:
+            _image = np.array(Img.open(i["original"]))
+            #mask = np.expand_dims(np.array(Img.open(i["binary"])),-1)
+            self._images += self._extract_images(image = _image)
+
+    def load(self):
+        self.load_features()
+        self.load_images()
+
+    @property
+    def images(self):
+        if isinstance(self._images, list):
+            return self._images
+        else:
+            print(f"station {os.path.basename(self._folder_path)}" is not loaded yet)
+
+    @property
+    def features(self):
+        if isinstance(self._features, list):
+            return self._features
+        else:
+            print(f"station {os.path.basename(self._folder_path)}" is not loaded yet)
