@@ -2,6 +2,7 @@ import glob2
 import os
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import re
 import cv2
 import PIL.Image as Img
@@ -22,7 +23,7 @@ class flowcam_loader():
         self._feature_data = None
         self._tif_paths = self._tif_management(path = path)
         self._csv_path = self._csv_management(path = path)
-        self._images = []
+        self._images = None
         self._features = None
 
     def _extract_index(self, path):
@@ -92,7 +93,6 @@ class flowcam_loader():
             _column_mask = np.any(image[_starting_y], axis = 1) # all the non-black point
             _column_start_x = np.insert(np.nonzero(np.diff(_column_mask.astype(int)) == 1)[0]+1, 0, 0)
             _column_end_x = np.nonzero(np.diff(_column_mask.astype(int)) == -1)[0]+1
-
             # check each horizontally bounded region
             for _x_index in range(_column_start_x.size):
                 # check the leftmost column
@@ -109,7 +109,7 @@ class flowcam_loader():
                         image[_starting_y:_starting_y+_image_end_y,
                               _image_starting_x:_column_end_x[_x_index]]
                         )
-            return _extracted_list
+        return _extracted_list
 
     def load_features(self):
         """
@@ -122,25 +122,63 @@ class flowcam_loader():
         load the images into the loader,
         all the images are ordered by the official order
         """
+        self._images = []
         for i in self._tif_paths:
             _image = np.array(Img.open(i["original"]))
             #mask = np.expand_dims(np.array(Img.open(i["binary"])),-1)
             self._images += self._extract_images(image = _image)
 
     def load(self):
+        """
+        a wrapper load both images and csv features
+        """
         self.load_features()
         self.load_images()
 
     @property
     def images(self):
-        if isinstance(self._images, list):
-            return self._images
-        else:
-            print(f"station {os.path.basename(self._folder_path)}" is not loaded yet)
+        return self._images
 
     @property
     def features(self):
-        if isinstance(self._features, list):
-            return self._features
-        else:
-            print(f"station {os.path.basename(self._folder_path)}" is not loaded yet)
+        return self._features
+
+    def __getitem__(self, i):
+        """
+        a universal wrapper returns individual rows, no matter what is saved loaded
+        Args:
+          i, the index
+        """
+        try:
+            image = self._images[i]
+        except IndexError:
+            raise
+        except TypeError:
+            image = None
+
+        try:
+            features = self.features.iloc[i]
+        except AttributeError:
+            raise
+        except TypeError:
+            features = None
+
+        return individual_result(image = image, features = features)
+
+class individual_result(dict):
+    """
+    this overridden dict allows a javascript-format accessing
+    """
+    @property
+    def image(self):
+        return self["image"]
+
+    @property
+    def features(self):
+        return self["features"]
+
+    @property
+    def plot_image(self):
+        plt.imshow(self["image"])
+        plt.show()
+        return self["image"]
