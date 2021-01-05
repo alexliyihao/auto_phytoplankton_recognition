@@ -7,46 +7,54 @@ from os import mkdir, walk, listdir, getcwd
 from os.path import join, exists
 
 
-def extract_image(image):
-    shape_height = image.shape[0]#the height of the image
-    shape_width = image.shape[1]#the width of the image
+def _extract_images(self, image):
+    """
+    extract all the images into the loader
+    the image will be extracted from the normal reading order
+    Args:
+        image: np.ndarray, the tif collage
+    Returns:
+        _extracted_list: list[np.ndarray], the list of images extracted from the list
+    """
+    _shape_height = image.shape[0]#the height of the image
+    _shape_width = image.shape[1]#the width of the image
 
-    for x in range(shape_width): # scan by column
-        if np.any(image[:,x,:]):#if any the pixel is not black
-            break #stop scanning
+    #search for the first column that is not black
+    _x = np.min(np.nonzero(np.any(image, axis = (1,2))))
 
-    mask = [np.any(i) for i in image[:,x,:]] # all the non-black point
-    row_start_y = [i for i in range(len(mask))\
-                   if ((mask[i] == True) and (mask[i+1] == True) and (mask[i-1] == False)) \
-                       or ((i == 0) and (mask[i] == True))]
+    # search along this column, we can obtain the start pixel row of each image row
+    _row_mask = np.any(image[:,_x,:], axis = 1)
+    _row_start_y = np.insert(np.nonzero(np.diff(_row_mask.astype(int)) == 1)[0]+1, 0, 0)
+    # to be used in later loop
+    _row_start_y = np.append(_row_start_y, _shape_height-1)
+    _extracted_list = []
+    #Search by all the starting rows
+    for _y_index in range(_row_start_y.size-1):
+        _starting_y = _row_start_y[_y_index]
 
-    row_start_y.append(shape_height)
+        # we can find all the start and end column of each image
+        # (i.e. they are horizonally bounded)
+        _column_mask = np.any(image[_starting_y], axis = 1) # all the non-black point
+        _column_start_x = np.insert(np.nonzero(np.diff(_column_mask.astype(int)) == 1)[0]+1, 0, 0)
+        _column_end_x = np.nonzero(np.diff(_column_mask.astype(int)) == -1)[0]+1
+        # check each horizontally bounded region
+        for _x_index in range(_column_start_x.size):
+            # check the leftmost column
+            _image_starting_x = _column_start_x[_x_index]
 
-    extracted_list = []
+            #search in this column between two starting y
+            _image_y_mask = np.any(image[_starting_y:_row_start_y[_y_index + 1],_image_starting_x], axis=1)
 
-    for y_index in range(len(row_start_y) - 1):#back to rows, check rows
-        y = row_start_y[y_index]
-        mask = [np.any(i) for i in image[y,:,:]] # all the non-black point
-        image_start_x = [i for i in range(len(mask)) \
-                         if (((mask[i] == True) and (mask[i-1] == False))\
-                             or ((i == 0) and (mask[i] == True)))]
-        image_end_x = [i for i in range(1, len(mask)) if ((mask[i] == False) and (mask[i-1] == True))]
-
-        for start_index in range(len(image_start_x)): # back to columns
-            image_x = image_start_x[start_index]
-
-            #check the non-black points the column image_x for the row
-            image_mask = [np.any(i) for i in image[y:row_start_y[y_index + 1],image_x,:]]
-
-            #get the end point
-            image_end_y = [i for i in range(len(image_mask))
-                           if ((image_mask[i] == False) and (image_mask [i-1] == True))][0]
+            #get the end point of y
+            _image_end_y = np.where(np.diff(_image_y_mask.astype(int)) == -1)[0][0]+1
 
             #append the image to the final list
-            extracted_list.append(image[y:y+image_end_y,image_x:image_end_x[start_index],:])
-
-    return extracted_list
-
+            _extracted_list.append(
+                    image[_starting_y:_starting_y+_image_end_y,
+                          _image_starting_x:_column_end_x[_x_index]]
+                    )
+    return _extracted_list
+    
 def find_valid_tif(root_path):
     """
     return the list of a valid tif under the root path
