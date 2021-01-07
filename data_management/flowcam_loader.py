@@ -117,16 +117,25 @@ class flowcam_loader():
         """
         self._features = pd.read_csv(self._csv_path)
 
+    def load_features_temp(self):
+        """
+        load the csv files of the folder into the loader but not save into the object
+        """
+        return pd.read_csv(self._csv_path)
+
     def load_images(self):
         """
         load the images into the loader,
         all the images are ordered by the official order
         """
-        self._images = []
-        for i in self._tif_paths:
-            _image = np.array(Img.open(i["original"]))
-            #mask = np.expand_dims(np.array(Img.open(i["binary"])),-1)
-            self._images += self._extract_images(image = _image)
+        self._images = [self._extract_images(image = np.array(Img.open(i["original"]))) for i in self._tif_paths]
+
+    def load_images_temp(self):
+        """
+        load the images into the loader but not save into the object
+        all the images are ordered by the official order
+        """
+        return [self._extract_images(image = np.array(Img.open(i["original"]))) for i in self._tif_paths]
 
     def load(self):
         """
@@ -134,6 +143,12 @@ class flowcam_loader():
         """
         self.load_features()
         self.load_images()
+
+    def load_temp(self):
+        """
+        a wrapper load both images and csv features but not save into the object
+        """
+        return self.load_features_temp, self.load_images_temp
 
     @property
     def images(self):
@@ -166,9 +181,6 @@ class flowcam_loader():
         return individual_result(image = image, features = features)
 
 class individual_result(dict):
-    """
-    this overridden dict allows a javascript-format accessing
-    """
     @property
     def image(self):
         return self["image"]
